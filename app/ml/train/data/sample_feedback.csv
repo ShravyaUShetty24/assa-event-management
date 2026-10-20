@@ -1,0 +1,21 @@
+feedback_id,uid,event_id,rating,comment,is_spam
+1,user-001,1,5,"Amazing event! The speakers were brilliant and the venue was perfect.",0
+2,user-002,1,4,"Really enjoyed it. Great organization and networking opportunities.",0
+3,user-003,2,5,"Outstanding! Best tech conference I have attended in years.",0
+4,user-004,2,1,"BUY NOW CLICK HERE FREE MONEY WIN A PRIZE!!!",1
+5,user-005,3,4,"Good event overall. Food could have been better but content was excellent.",0
+6,user-006,3,2,"Disappointing. The sessions were repetitive and the venue was too noisy.",0
+7,user-007,4,5,"Loved every moment! Will definitely come back next year.",0
+8,user-008,4,3,"It was okay. Not what I expected from the description.",0
+9,user-009,5,1,"aaaaaaaaaaaaaaaaaaa bad terrible",1
+10,user-010,5,5,"Fantastic speakers and well-organized sessions. Highly recommend!",0
+11,user-011,6,4,"Great event. The workshops were super interactive.",0
+12,user-012,6,2,"Poor audio quality and the schedule kept changing. Frustrating.",0
+13,user-013,7,5,"World class event. The guest performances were incredible!",0
+14,user-014,7,4,"Loved the vibe and the community around this event.",0
+15,user-015,8,1,"Waste of money. Poor organization and terrible food.",0
+16,user-016,8,5,"Best music festival ever! Absolutely loved it from start to finish.",0
+17,user-017,9,3,"Average experience. Some sessions were good but others were boring.",0
+18,user-018,9,4,"Solid event. The volunteer team was super helpful.",0
+19,user-019,1,5,"Exceeded all my expectations. Networking was phenomenal!",0
+20,user-020,2,2,"Disappointing turnout and the venue was way too small for the crowd.",0
