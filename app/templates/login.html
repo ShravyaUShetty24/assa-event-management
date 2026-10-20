@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block title %}Login — ASSA{% endblock %}
+
+{% block content %}
+<div class="auth-page">
+  <div class="auth-card">
+    <div class="auth-card__header">
+      <img src="{{ url_for('static', filename='assa_logo_wide.png') }}" alt="ASSA Event Management Platform" class="auth-brand-logo" />
+      <h1>Welcome Back</h1>
+      <p>Sign in to your ASSA account</p>
+    </div>
+
+    <form class="auth-form" id="loginForm">
+      <div class="form-group">
+        <label class="form-label" for="email">Email Address</label>
+        <input type="email" id="email" class="input" placeholder="you@example.com" required autocomplete="email" />
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="password">Password</label>
+        <div class="input-group">
+          <input type="password" id="password" class="input" placeholder="••••••••" required autocomplete="current-password" />
+          <button type="button" class="input-addon" id="togglePassword" aria-label="Show password">👁️</button>
+        </div>
+      </div>
+
+      <div id="loginError" class="form-error" style="display:none;"></div>
+
+      <button type="submit" class="btn btn-primary" style="width:100%;margin-top:.5rem;" id="loginBtn">
+        Sign In
+      </button>
+    </form>
+
+    <div class="auth-card__footer">
+      <p>Don't have an account? <a href="{{ url_for('main.register_page') }}">Sign up free</a></p>
+    </div>
+
+    <!-- Quick demo logins -->
+    <div class="demo-logins" style="margin-top:1.5rem;padding-top:1.5rem;border-top:1px solid var(--border);">
+      <p style="font-size:.8rem;color:var(--text-muted);text-align:center;margin-bottom:.75rem;">Quick Demo Login</p>
+      <div style="display:flex;gap:.5rem;flex-wrap:wrap;justify-content:center;">
+        <button class="btn btn-ghost btn-sm demo-btn" data-email="admin@assa.com"    data-pass="admin123">Admin</button>
+        <button class="btn btn-ghost btn-sm demo-btn" data-email="org@assa.com"      data-pass="org12345">Organizer</button>
+        <button class="btn btn-ghost btn-sm demo-btn" data-email="user@assa.com"     data-pass="user1234">Attendee</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Toggle password visibility
+document.getElementById('togglePassword').addEventListener('click', function() {
+  const inp = document.getElementById('password');
+  inp.type = inp.type === 'password' ? 'text' : 'password';
+});
+
+// Demo login buttons
+document.querySelectorAll('.demo-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.getElementById('email').value    = btn.dataset.email;
+    document.getElementById('password').value = btn.dataset.pass;
+  });
+});
+
+// Login form submit
+document.getElementById('loginForm').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  const btn = document.getElementById('loginBtn');
+  const err = document.getElementById('loginError');
+  btn.disabled = true;
+  btn.textContent = 'Signing in…';
+  err.style.display = 'none';
+
+  const res  = await fetch('/api/auth/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      email:    document.getElementById('email').value,
+      password: document.getElementById('password').value,
+    })
+  });
+  const data = await res.json();
+
+  if (res.ok) {
+    showToast('✅ Login successful!', 'success');
+    setTimeout(() => window.location.href = '/dashboard', 1000);
+  } else {
+    err.textContent   = data.error || 'Login failed. Please try again.';
+    err.style.display = 'block';
+    btn.disabled      = false;
+    btn.textContent   = 'Sign In';
+  }
+});
+</script>
+{% endblock %}

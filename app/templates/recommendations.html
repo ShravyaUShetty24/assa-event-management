@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Recommendations — ASSA{% endblock %}
+
+{% block content %}
+<div class="page-header" style="padding: 0.75rem 0; margin-bottom: 0.75rem; min-height: auto;">
+  <div class="container" style="display: flex; align-items: center;">
+    <h1 style="font-size: 1.4rem; margin: 0; color: #fff;">Recommendations</h1>
+  </div>
+</div>
+
+<section class="section">
+  <div class="container">
+    {% if not events %}
+      <div class="empty-state">
+        <span style="font-size: 3rem;">✨</span>
+        <h2>No recommendations yet</h2>
+        <p>Book more events to help us understand your taste!</p>
+        <a href="{{ url_for('main.events') }}" class="btn btn-primary" style="margin-top: 1rem;">Browse All Events</a>
+      </div>
+    {% else %}
+      <div class="events-grid">
+        {% for event in events %}
+          {% set is_home = True %}
+          {% include '_event_card.html' %}
+        {% endfor %}
+      </div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

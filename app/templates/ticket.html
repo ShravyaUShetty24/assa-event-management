@@ -1,0 +1,236 @@
+{% extends "base.html" %}
+{% block title %}Ticket #{{ booking.ticket_code }} — ASSA{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width:560px;padding-top:2.5rem;padding-bottom:3rem;">
+  <div class="ticket-card">
+    <!-- Header -->
+    <div class="ticket-card__header">
+      <div class="ticket-brand">
+        <img src="{{ url_for('static', filename='assa_logo_wide.png') }}?v=2" alt="ASSA" class="brand-logo-full" />
+      </div>
+      <div class="ticket-status ticket-status--{{ booking.status }}">
+        {% if booking.status == 'paid' %}✅ Confirmed{% elif booking.status == 'pending' %}⏳ Pending{% else %}❌ Cancelled{% endif %}
+      </div>
+    </div>
+
+    <!-- Event info -->
+    <div class="ticket-card__body">
+      <h2 class="ticket-event-title">{{ event.title if event else 'Event' }}</h2>
+
+      <div class="ticket-meta-grid">
+        <div class="ticket-meta-item">
+          <span class="ticket-meta-label">📅 Date</span>
+          <span class="ticket-meta-value">{{ event.date.strftime('%A, %B %d, %Y') if event and event.date else 'TBD' }}</span>
+        </div>
+        <div class="ticket-meta-item">
+          <span class="ticket-meta-label">⏰ Time</span>
+          <span class="ticket-meta-value">{{ event.date.strftime('%H:%M') if event and event.date else 'TBD' }}</span>
+        </div>
+        <div class="ticket-meta-item">
+          <span class="ticket-meta-label">📍 Location</span>
+          <span class="ticket-meta-value">{{ event.location if event else 'N/A' }}</span>
+        </div>
+        <div class="ticket-meta-item">
+          <span class="ticket-meta-label">🏷️ Category</span>
+          <span class="ticket-meta-value">{{ event.category if event else 'N/A' }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tear line -->
+    <div class="ticket-tear"></div>
+
+    <!-- Ticket code -->
+    <div class="ticket-card__footer" style="justify-content: center; text-align: center;">
+      <div>
+        <p class="ticket-code-label">Ticket ID</p>
+        <p class="ticket-code-value">{{ booking.ticket_code }}</p>
+      </div>
+    </div>
+
+    {% if booking.status == 'pending' and event and event.price > 0 %}
+    <div style="padding:1rem;text-align:center;background:var(--olive-faint);">
+      <p style="margin-bottom:.75rem;">Payment is pending. Complete now to confirm your spot.</p>
+      <button class="btn btn-primary" id="payTicketBtn" data-booking-id="{{ booking.booking_id }}">
+        Pay Now
+      </button>
+    </div>
+    {% endif %}
+  </div>
+
+  <div style="display:flex;gap:1rem;justify-content:center;margin-top:1.5rem;flex-wrap:wrap;margin-bottom:2rem;">
+    <button class="btn btn-outline" onclick="window.print()">🖨️ Print Ticket</button>
+    <a href="{{ url_for('main.dashboard') }}" class="btn btn-ghost">← My Bookings</a>
+  </div>
+
+  <!-- Feedback Section -->
+  <div class="feedback-card card" id="feedbackSection">
+    <div class="card__body">
+      <h3 class="feedback-title">Share Your Feedback</h3>
+      <p class="text-muted" style="font-size: 0.9rem; margin-bottom: 1.25rem;">How was your experience with this event?</p>
+
+      <form id="feedbackForm">
+        <input type="hidden" id="fbEventId" value="{{ event.event_id }}">
+        <input type="hidden" id="fbBookingId" value="{{ booking.booking_id }}">
+
+        <div class="star-rating-container">
+          <div class="star-rating" id="starRating">
+            <span class="star" data-value="1">★</span>
+            <span class="star" data-value="2">★</span>
+            <span class="star" data-value="3">★</span>
+            <span class="star" data-value="4">★</span>
+            <span class="star" data-value="5">★</span>
+          </div>
+          <input type="hidden" id="fbRating" name="rating" value="">
+        </div>
+
+        <div class="form-group" style="margin-top: 1rem;">
+          <textarea id="fbComment" class="input textarea" placeholder="Write your review here..." rows="3"></textarea>
+        </div>
+
+        <div style="margin-top: 1.25rem;">
+          <button type="submit" class="btn btn-primary" style="background-color: #28a745; border-color: #28a745; width: 100%;">
+            Submit Feedback
+          </button>
+        </div>
+      </form>
+      
+      <div id="feedbackSuccess" style="display: none; margin-top: 1rem; text-align: center; color: #28a745; font-weight: 600;">
+        ✅ Feedback submitted successfully!
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.feedback-card {
+  max-width: 560px;
+  margin: 0 auto;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+  background: var(--white);
+}
+.feedback-title {
+  font-size: 1.25rem;
+  margin-bottom: 0.5rem;
+  color: var(--text-dark);
+}
+.star-rating-container {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 1rem;
+}
+.star-rating {
+  display: flex;
+  flex-direction: row-reverse;
+  gap: 0.25rem;
+}
+.star {
+  font-size: 2.2rem;
+  color: #ddd;
+  cursor: pointer;
+  transition: color 0.2s, transform 0.1s;
+}
+.star:hover,
+.star:hover ~ .star,
+.star.active,
+.star.active ~ .star {
+  color: #ffc107;
+}
+.star:active {
+  transform: scale(1.2);
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const payBtn = document.getElementById('payTicketBtn');
+if (payBtn) {
+  payBtn.addEventListener('click', async () => {
+    payBtn.disabled = true;
+    payBtn.textContent = 'Processing…';
+    const id  = payBtn.dataset.bookingId;
+    const res = await fetch(`/api/payments/${id}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ card_number: '4242424242424242' })
+    });
+    const data = await res.json();
+    showToast(data.message || (res.ok ? 'Payment successful!' : 'Payment failed'), res.ok ? 'success' : 'error');
+    if (res.ok) setTimeout(() => location.reload(), 1500);
+    else { payBtn.disabled = false; payBtn.textContent = 'Pay Now'; }
+  });
+}
+
+// --- Feedback System ---
+const stars = document.querySelectorAll('.star');
+const ratingInput = document.getElementById('fbRating');
+const feedbackForm = document.getElementById('feedbackForm');
+
+// Star interaction
+stars.forEach(star => {
+  star.addEventListener('click', () => {
+    const val = star.dataset.value;
+    ratingInput.value = val;
+    
+    // Reset and set active
+    stars.forEach(s => s.classList.remove('active'));
+    star.classList.add('active');
+  });
+});
+
+// Form submission
+if (feedbackForm) {
+  feedbackForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const rating = ratingInput.value;
+    const comment = document.getElementById('fbComment').value;
+    const event_id = document.getElementById('fbEventId').value;
+    const booking_id = document.getElementById('fbBookingId').value;
+    
+    if (!rating) {
+      showToast('Please select a star rating', 'error');
+      return;
+    }
+    
+    const btn = feedbackForm.querySelector('button[type="submit"]');
+    btn.disabled = true;
+    btn.textContent = 'Submitting...';
+    
+    try {
+      const res = await fetch('/api/feedback/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          event_id: event_id,
+          booking_id: booking_id,
+          rating: rating,
+          comment: comment
+        })
+      });
+      
+      const data = await res.json();
+      
+      if (res.ok) {
+        feedbackForm.style.display = 'none';
+        document.getElementById('feedbackSuccess').style.display = 'block';
+        showToast('Feedback submitted successfully!', 'success');
+      } else {
+        showToast(data.error || 'Failed to submit feedback', 'error');
+        btn.disabled = false;
+        btn.textContent = 'Submit Feedback';
+      }
+    } catch (err) {
+      console.error(err);
+      showToast('An error occurred', 'error');
+      btn.disabled = false;
+      btn.textContent = 'Submit Feedback';
+    }
+  });
+}
+</script>
+{% endblock %}

@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+{% block title %}ASSA — Smart Event Management{% endblock %}
+{% block meta_desc %}Discover, book, and manage amazing events with ASSA's all-in-one platform.{% endblock %}
+
+{% block content %}
+
+<!-- ── HERO ──────────────────────────────────────────────────────── -->
+<section class="hero">
+  <div class="hero-content">
+    <span class="hero-badge">✨ Smart Event Platform</span>
+    <h1 class="hero-title">Discover Events<br>You'll <span class="text-accent">Love</span></h1>
+    <p class="hero-subtitle">ASSA helps you discover and book events tailored to your interests. Manage tickets, track bookings, and get smart insights — all in one place.</p>
+    <div class="hero-actions">
+      <a href="{{ url_for('main.events') }}" class="btn btn-primary btn-lg">Explore Events</a>
+      {% if not current_user.is_authenticated %}
+        <a href="{{ url_for('main.register_page') }}" class="btn btn-outline btn-lg">Get Started Free</a>
+      {% endif %}
+    </div>
+    <div class="hero-stats">
+      <div class="stat"><span class="stat-number">500+</span><span class="stat-label">Events</span></div>
+      <div class="stat"><span class="stat-number">10K+</span><span class="stat-label">Attendees</span></div>
+      <div class="stat"><span class="stat-number">98%</span><span class="stat-label">Satisfaction</span></div>
+    </div>
+  </div>
+  <div class="hero-visual">
+    <div class="hero-action-buttons">
+      <a href="{{ url_for('main.create_event') }}" class="hero-action-btn">
+        <span class="btn-icon">📅</span>
+        <div class="btn-text">
+          <strong>Create Event</strong>
+          <span>Organize your own show</span>
+        </div>
+      </a>
+      <a href="#upcoming" class="hero-action-btn scroll-link">
+        <span class="btn-icon">🎟️</span>
+        <div class="btn-text">
+          <strong>Book an Event</strong>
+          <span>Find amazing experiences</span>
+        </div>
+      </a>
+      <a href="{{ url_for('main.manage_events') }}" class="hero-action-btn">
+        <span class="btn-icon">📊</span>
+        <div class="btn-text">
+          <strong>Manage Event</strong>
+          <span>Track and edit events</span>
+        </div>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ── UPCOMING EVENTS ────────────────────────────────────────────── -->
+<section class="section" id="upcoming">
+  <div class="container">
+    <div class="section-header">
+      <h2 class="section-title">Upcoming Events</h2>
+      <a href="{{ url_for('main.events') }}" class="see-more-btn">
+        See More <span class="arrow">→</span>
+      </a>
+    </div>
+    <div class="events-grid" id="homeEventsGrid">
+      {% set is_home = True %}
+      {% set is_minimal = True %}
+      {% set ordered_titles = ['Vijay Prakash Live', 'RCB vs Delhi Capitals', 'Anirudh Live Concert'] %}
+      {% for title in ordered_titles %}
+        {% for event in events if event.title == title %}
+          {% include '_event_card.html' %}
+        {% endfor %}
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<!-- ── CATEGORIES ─────────────────────────────────────────────────── -->
+<section class="section categories-section">
+  <div class="container">
+    <h2 class="section-title">Browse by Category</h2>
+    <div class="categories-grid">
+      {% set cat_icons = {'Music':'🎵','Sports':'⚽','Health':'🌿','Business':'💼','Marriage':'💍'} %}
+      {% for cat in categories %}
+        {% if cat == 'Business' %}
+          <a href="javascript:void(0)" class="category-card" onclick="showToast('No upcoming events', 'info')">
+            <span class="cat-icon">{{ cat_icons.get(cat, '🎯') }}</span>
+            <span class="cat-name">{{ cat }}</span>
+          </a>
+        {% elif cat == 'Marriage' %}
+          <a href="{{ url_for('main.marriage') }}" class="category-card">
+            <span class="cat-icon">{{ cat_icons.get(cat, '🎯') }}</span>
+            <span class="cat-name">{{ cat }}</span>
+          </a>
+        {% else %}
+          <a href="/events?category={{ cat }}" class="category-card">
+            <span class="cat-icon">{{ cat_icons.get(cat, '🎯') }}</span>
+            <span class="cat-name">{{ cat }}</span>
+          </a>
+        {% endif %}
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<!-- ── PLATFORM FEATURES ────────────────────────────────────────────────── -->
+<section class="section features-section">
+  <div class="container">
+    <h2 class="section-title text-center">Why Choose ASSA?</h2>
+    <p class="section-subtitle text-center">ASSA enhances every step of your event journey with smart tools and a seamless experience.</p>
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon">🎯</div>
+        <h3>Smart Recommendations</h3>
+        <p>Our recommendation engine analyzes your booking history and preferences to suggest events you'll love.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🛡️</div>
+        <h3>Secure Platform</h3>
+        <p>Advanced security keeps our platform safe by identifying and preventing suspicious bookings in real-time.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">💬</div>
+        <h3>Attendee Insights</h3>
+        <p>Every feedback is analyzed to understand how attendees truly feel about events, helping organizers improve.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+{% endblock %}

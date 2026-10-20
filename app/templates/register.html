@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block title %}Create Account — ASSA{% endblock %}
+
+{% block content %}
+<div class="auth-page">
+  <div class="auth-card">
+    <div class="auth-card__header">
+      <img src="{{ url_for('static', filename='assa_logo_wide.png') }}" alt="ASSA Event Management Platform" class="auth-brand-logo" />
+      <h1>Create Account</h1>
+      <p>Join ASSA and start exploring events</p>
+    </div>
+
+    <form class="auth-form" id="registerForm">
+      <div class="form-group">
+        <label class="form-label" for="name">Full Name</label>
+        <input type="text" id="name" class="input" placeholder="Jane Doe" required autocomplete="name" />
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="email">Email Address</label>
+        <input type="email" id="email" class="input" placeholder="you@example.com" required autocomplete="email" />
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="password">Password <span style="font-size:.8rem;color:var(--text-muted);">(min. 6 chars)</span></label>
+        <div class="input-group">
+          <input type="password" id="password" class="input" placeholder="Create a password" required />
+          <button type="button" class="input-addon" id="togglePass" aria-label="Show password">👁️</button>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="role">I want to</label>
+        <select id="role" class="input select">
+          <option value="attendee">🎟️ Attend Events (Attendee)</option>
+          <option value="organizer">🎪 Organise Events (Organizer)</option>
+        </select>
+      </div>
+
+      <div id="registerError" class="form-error" style="display:none;"></div>
+
+      <button type="submit" class="btn btn-primary" style="width:100%;margin-top:.5rem;" id="registerBtn">
+        Create Account
+      </button>
+    </form>
+
+    <div class="auth-card__footer">
+      <p>Already have an account? <a href="{{ url_for('main.login_page') }}">Sign in</a></p>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.getElementById('togglePass').addEventListener('click', function() {
+  const inp = document.getElementById('password');
+  inp.type = inp.type === 'password' ? 'text' : 'password';
+});
+
+document.getElementById('registerForm').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  const btn = document.getElementById('registerBtn');
+  const err = document.getElementById('registerError');
+  btn.disabled  = true;
+  btn.textContent = 'Creating account…';
+  err.style.display = 'none';
+
+  const res  = await fetch('/api/auth/register', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      name:     document.getElementById('name').value,
+      email:    document.getElementById('email').value,
+      password: document.getElementById('password').value,
+      role:     document.getElementById('role').value,
+    })
+  });
+  const data = await res.json();
+
+  if (res.ok) {
+    showToast('🎉 Account created! Welcome to ASSA!', 'success');
+    setTimeout(() => window.location.href = '/dashboard', 1200);
+  } else {
+    err.textContent   = data.error || 'Registration failed. Please try again.';
+    err.style.display = 'block';
+    btn.disabled      = false;
+    btn.textContent   = 'Create Account';
+  }
+});
+</script>
+{% endblock %}
