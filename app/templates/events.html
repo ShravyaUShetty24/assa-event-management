@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% block title %}Browse Events — ASSA{% endblock %}
+{% block meta_desc %}Browse and search all upcoming events on ASSA.{% endblock %}
+
+{% block content %}
+<div class="page-header" style="padding: 0.75rem 0; margin-bottom: 0.75rem; min-height: auto;">
+  <div class="container" style="display: flex; align-items: center;">
+    <h1 style="font-size: 1.4rem; margin: 0; color: #fff;">Events</h1>
+  </div>
+</div>
+
+<section class="section" style="padding-top: 1.5rem;">
+  <div class="container">
+    <div class="events-grid" id="eventsGrid"></div>
+  </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function buildEventCard(e) {
+  const price = e.price === 0 ? 'Free' : `₹${Math.round(e.price)}`;
+  const dateStr = e.date ? new Date(e.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'TBD';
+  const ratingValue = (3.8 + Math.random() * 1.1).toFixed(1);
+  const micIcon = e.category === 'Music' ? '🎤' : '';
+  const artistLine = e.artist ? `<p class="event-card__artist">${micIcon} ${e.artist}</p>` : '';
+  const imageHtml = e.image_url 
+    ? `<img src="${e.image_url}" alt="${e.title}" class="event-card__image">`
+    : `<div class="event-card__image-placeholder">🎯</div>`;
+  
+  // Rating block only for predefined events (not user-created)
+  const ratingBlock = !e.is_user_created ? `
+    <div class="card-rating">
+      <span class="stars">⭐ ${ratingValue}</span>
+      <a href="javascript:void(0)" class="view-reviews-link" onclick="openReviewModal('${e.title.replace(/'/g, "\\'")}')">View Reviews</a>
+    </div>
+  ` : '';
+
+  return `
+    <article class="event-card" data-event-id="${e.event_id}">
+      <div class="event-card__image-wrapper">
+        ${imageHtml}
+      </div>
+      <div class="event-card__body">
+        <div class="event-card__header-row">
+          <h3 class="event-card__title">${e.title}</h3>
+          <span class="category-tag category-tag--${e.category.toLowerCase()}">${e.category}</span>
+        </div>
+        ${artistLine}
+        <div class="event-card__meta">
+          ${ratingBlock}
+          <div class="meta-box">
+            <div class="meta-row">
+              <span class="meta-item">📅 ${dateStr}</span>
+              <span class="meta-item">📍 ${e.location.substring(0, 25)}${e.location.length > 25 ? '…' : ''}</span>
+            </div>
+          </div>
+        </div>
+        <div class="event-card__footer">
+          <div><span class="event-price">${price}</span></div>
+          <div class="event-card__actions">
+            ${e.is_full ? '<span class="badge badge--red">Sold Out</span>' : `<a href="/events/${e.event_id}" class="btn btn-primary btn-sm">Book Now</a>`}
+          </div>
+        </div>
+      </div>
+    </article>`;
+}
+
+async function loadEvents() {
+  const grid = document.getElementById('eventsGrid');
+  try {
+    const res = await fetch('/api/events/?per_page=100'); // Fetch all/most events
+    const data = await res.json();
+    if (data.events) {
+      grid.innerHTML = data.events.map(buildEventCard).join('');
+    }
+  } catch (err) {
+    grid.innerHTML = '<p class="error-state">Failed to load events.</p>';
+  }
+}
+
+loadEvents();
+</script>
+{% endblock %}

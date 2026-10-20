@@ -1,0 +1,207 @@
+{% extends "base.html" %}
+{% block title %}Create Event — ASSA{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="container">
+    <h1>Create New Event</h1>
+    <p>Organize an amazing experience for your audience.</p>
+  </div>
+</div>
+
+<section class="section">
+  <div class="container">
+    <div class="card" style="max-width: 800px; margin: 0 auto;">
+      <div class="card__body">
+        <form id="createEventForm">
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="title">Event Title</label>
+              <input type="text" id="title" class="input" placeholder="e.g. Summer Music Festival" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="category">Category</label>
+              <select id="category" class="input select" required>
+                <option value="">Select Category</option>
+                <option value="Music">Music</option>
+                <option value="Sports">Sports</option>
+                <option value="Health">Health</option>
+                <option value="Business">Business</option>
+                <option value="Marriage">Marriage</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="artist">Subtitle / Artist</label>
+            <input type="text" id="artist" class="input" placeholder="e.g. IPL 2026 or Artist Name">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="description">Description</label>
+            <textarea id="description" class="input textarea" placeholder="Tell people what your event is about..." required></textarea>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="date">Date</label>
+              <input type="date" id="date" class="input" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="time">Time</label>
+              <input type="time" id="time" class="input" required>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="location">Location</label>
+            <input type="text" id="location" class="input" placeholder="e.g. Central Park, NY or Online" required>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="ticketType">Ticket Type</label>
+              <select id="ticketType" class="input select" onchange="togglePrice(this.value)">
+                <option value="Free">Free</option>
+                <option value="Paid">Paid</option>
+              </select>
+            </div>
+            <div class="form-group" id="priceGroup" style="display: none;">
+              <label class="form-label" for="price">Price (₹)</label>
+              <input type="number" id="price" class="input" placeholder="0" min="0">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Event Banner</label>
+            <div id="imagePreviewContainer" class="image-preview-container" style="margin-bottom: 1rem; position: relative; border-radius: 12px; overflow: hidden; aspect-ratio: 16/9; background: var(--olive-ghost); display: none;">
+              <img id="imagePreview" src="" alt="Preview" style="width: 100%; height: 100%; object-fit: cover;">
+            </div>
+            <div class="input-group">
+              <input type="file" id="imageUpload" class="input" accept=".jpg,.jpeg,.png">
+            </div>
+            <p class="help-text">Recommended size: 1200x675px. Only JPG, PNG allowed.</p>
+          </div>
+
+          <div class="form-actions" style="margin-top: 2rem;">
+            <button type="submit" id="submitBtn" class="btn btn-primary btn-lg" style="width: 100%;">Create Event</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+// Image Preview logic
+document.getElementById('imageUpload').addEventListener('change', function(e) {
+  const file = e.target.files[0];
+  if (file) {
+    const reader = new FileReader();
+    reader.onload = function(event) {
+      const container = document.getElementById('imagePreviewContainer');
+      const preview = document.getElementById('imagePreview');
+      preview.src = event.target.result;
+      container.style.display = 'block';
+    }
+    reader.readAsDataURL(file);
+  }
+});
+
+function togglePrice(val) {
+  const priceGroup = document.getElementById('priceGroup');
+  const priceInput = document.getElementById('price');
+  if (val === 'Paid') {
+    priceGroup.style.display = 'block';
+    priceInput.required = true;
+  } else {
+    priceGroup.style.display = 'none';
+    priceInput.required = false;
+    priceInput.value = 0;
+  }
+}
+
+document.getElementById('createEventForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const submitBtn = document.getElementById('submitBtn');
+  submitBtn.disabled = true;
+  submitBtn.textContent = 'Creating...';
+  
+  const title = document.getElementById('title').value;
+  const category = document.getElementById('category').value;
+  const description = document.getElementById('description').value;
+  const dateStr = document.getElementById('date').value;
+  const timeStr = document.getElementById('time').value;
+  const location = document.getElementById('location').value;
+  const price = document.getElementById('price').value || 0;
+  
+  const imageFile = document.getElementById('imageUpload').files[0];
+  let image_url = '';
+
+  try {
+    // 1. Upload image if selected
+    if (imageFile) {
+      const formData = new FormData();
+      formData.append('image', imageFile);
+      const uploadRes = await fetch('/api/events/upload', {
+        method: 'POST',
+        body: formData
+      });
+      const uploadData = await uploadRes.json();
+      if (uploadRes.ok) {
+        image_url = uploadData.url;
+      } else {
+        showToast(uploadData.error || 'Image upload failed', 'error');
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Create Event';
+        return;
+      }
+    } else {
+      // Default image based on category
+      const defaultImages = {
+        'Music': 'https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?auto=format&fit=crop&q=80&w=1000',
+        'Sports': 'https://images.unsplash.com/photo-1461896756970-80d7a46e9c2a?auto=format&fit=crop&q=80&w=1000',
+        'Health': 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&q=80&w=1000',
+        'Business': 'https://images.unsplash.com/photo-1475721027785-f74eccf877e2?auto=format&fit=crop&q=80&w=1000',
+        'Marriage': 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&q=80&w=1000'
+      };
+      image_url = defaultImages[category] || 'https://images.unsplash.com/photo-1540575861501-7ad058bc382d?auto=format&fit=crop&q=80&w=1000';
+    }
+
+    // 2. Save event details
+    const isoDate = `${dateStr}T${timeStr}:00`;
+    const payload = {
+      title,
+      category,
+      description,
+      date: isoDate,
+      location,
+      price: parseFloat(price),
+      image_url,
+      artist: document.getElementById('artist').value
+    };
+
+    const res = await fetch('/api/events/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    
+    const data = await res.json();
+    
+    if (res.ok) {
+      showToast('Event created successfully!', 'success');
+      setTimeout(() => window.location.href = '/manage-events', 1500);
+    } else {
+      showToast(data.error || 'Failed to create event', 'error');
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Create Event';
+    }
+  } catch (err) {
+    showToast('An error occurred', 'error');
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Create Event';
+  }
+});
+</script>
+{% endblock %}

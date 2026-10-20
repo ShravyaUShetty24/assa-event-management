@@ -1,0 +1,256 @@
+{% extends "base.html" %}
+{% block title %}My Dashboard — ASSA{% endblock %}
+
+{% block extra_css %}
+<style>
+/* Glassmorphism Modal */
+.glass-modal {
+  display: none;
+  position: fixed;
+  z-index: 2000;
+  left: 0; top: 0;
+  width: 100%; height: 100%;
+  background-color: rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(8px);
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.3s ease;
+}
+
+.glass-modal-content {
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
+  width: 90%;
+  max-width: 500px;
+  padding: 1.5rem;
+  position: relative;
+  transform: scale(0.9);
+  transition: transform 0.3s ease;
+  color: white;
+}
+
+.glass-modal.active { display: flex; opacity: 1; }
+.glass-modal.active .glass-modal-content { transform: scale(1); }
+
+.close-glass {
+  position: absolute;
+  top: 1rem; right: 1rem;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: rgba(255,255,255,0.7);
+}
+
+.rec-item {
+  display: flex;
+  gap: 1rem;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 0.75rem;
+  border-radius: 12px;
+  margin-bottom: 0.75rem;
+  align-items: center;
+}
+
+.rec-item img {
+  width: 60px; height: 60px;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+.rec-info h4 { margin: 0; font-size: 1rem; }
+.rec-info p { margin: 0.25rem 0 0; font-size: 0.8rem; opacity: 0.8; }
+
+/* Grid Alignment */
+.dash-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+.dash-table th, .dash-table td { padding: 0.4rem 1rem; font-size: 0.85rem; text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.col-1 { width: 30%; }
+.col-2 { width: 15%; }
+.col-3 { width: 20%; }
+.col-4 { width: 15%; }
+.col-5 { width: 20%; text-align: right !important; }
+
+.dash-row { border-bottom: 1px solid var(--border); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header" style="padding: 0.75rem 0; margin-bottom: 0.75rem; min-height: auto;">
+  <div class="container" style="display: flex; justify-content: space-between; align-items: center;">
+    <h1 style="font-size: 1.4rem; margin: 0;">Dashboard</h1>
+    <button class="btn btn-primary btn-sm" onclick="openRecModal()" style="border-radius: 20px; font-weight: 600; background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4); color: white;">✨ Recommendations</button>
+  </div>
+</div>
+
+<div class="container" style="max-width: 1100px; padding-bottom: 5rem;">
+  
+  <!-- ── SECTION 1: My Bookings ── -->
+  <div class="card" style="margin-bottom: 0.75rem; border-radius: 8px;">
+    <div class="card__header" style="padding: 0.5rem 1rem; border-bottom: 1px solid var(--border);">
+      <h2 style="font-size: 0.95rem; margin: 0;">🎟️ My Bookings</h2>
+    </div>
+    <div class="card__body" style="padding: 0;">
+      <table class="dash-table">
+        <thead style="background: var(--olive-ghost); font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted);">
+          <tr>
+            <th class="col-1">Event Name</th>
+            <th class="col-2">Date</th>
+            <th class="col-3">Ticket ID</th>
+            <th class="col-4">Status</th>
+            <th class="col-5">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for b in bookings %}
+          <tr class="dash-row">
+            <td class="col-1"><strong>{{ b.event.title }}</strong></td>
+            <td class="col-2">{{ b.event.date.strftime('%b %d, %Y') }}</td>
+            <td class="col-3" style="color: var(--text-muted);">{{ b.ticket_code }}</td>
+            <td class="col-4"><span class="status-pill status-pill--{{ b.status }}" style="font-size: 0.65rem;">{{ b.status|capitalize }}</span></td>
+            <td class="col-5">
+              <div style="display: flex; gap: 0.4rem; justify-content: flex-end;">
+                <a href="/ticket/{{ b.booking_id }}" class="btn btn-ghost btn-sm" style="font-size: 0.7rem; padding: 0.2rem 0.4rem;">View</a>
+                {% if b.status != 'cancelled' %}
+                  <button class="btn btn-danger btn-sm" style="font-size: 0.7rem; padding: 0.2rem 0.4rem;" onclick="cancelBooking({{ b.booking_id }})">Cancel</button>
+                {% endif %}
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── SECTION 2: Events Created ── -->
+  <div class="card" style="margin-bottom: 0.75rem; border-radius: 8px;">
+    <div class="card__header" style="padding: 0.5rem 1rem; border-bottom: 1px solid var(--border);">
+      <h2 style="font-size: 0.95rem; margin: 0;">📅 Events Created</h2>
+    </div>
+    <div class="card__body" style="padding: 0;">
+      <table class="dash-table">
+        <thead style="background: var(--olive-ghost); font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted);">
+          <tr>
+            <th class="col-1">Image / Title</th>
+            <th class="col-2">Date</th>
+            <th class="col-3">Category</th>
+            <th class="col-4">Location</th>
+            <th class="col-5"></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for ev in my_events %}
+          <tr class="dash-row">
+            <td class="col-1" style="display: flex; align-items: center; gap: 0.5rem; border: none;">
+              <img src="{{ ev.image_url }}" style="width: 40px; height: 28px; object-fit: cover; border-radius: 4px;">
+              <strong>{{ ev.title }}</strong>
+            </td>
+            <td class="col-2">{{ ev.date.strftime('%b %d, %Y') }}</td>
+            <td class="col-3"><span style="text-transform: uppercase; font-size: 0.75rem; font-weight: 600; color: var(--olive-dark);">{{ ev.category }}</span></td>
+            <td class="col-4" style="color: var(--text-muted);">{{ ev.location[:25] }}...</td>
+            <td class="col-5"></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── SECTION 3: Manage Events ── -->
+  <div class="card" style="border-radius: 8px;">
+    <div class="card__header" style="padding: 0.5rem 1rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+      <h2 style="font-size: 0.95rem; margin: 0;">📊 Manage Events</h2>
+      <a href="{{ url_for('main.create_event') }}" class="btn btn-primary btn-sm" style="font-size: 0.75rem; padding: 0.2rem 0.5rem;">+ New Event</a>
+    </div>
+    <div class="card__body" style="padding: 0;">
+      <table class="dash-table">
+        <thead style="background: var(--olive-ghost); font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted);">
+          <tr>
+            <th class="col-1">Title</th>
+            <th class="col-2">Date</th>
+            <th class="col-3">Bookings</th>
+            <th class="col-4"></th>
+            <th class="col-5">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for ev in my_events %}
+          <tr class="dash-row">
+            <td class="col-1"><strong>{{ ev.title }}</strong></td>
+            <td class="col-2">{{ ev.date.strftime('%b %d, %Y') }}</td>
+            <td class="col-3">{{ ev.booked_count }} / {{ ev.capacity }}</td>
+            <td class="col-4"></td>
+            <td class="col-5">
+              <div style="display: flex; gap: 0.4rem; justify-content: flex-end;">
+                <a href="{{ url_for('main.edit_event', event_id=ev.event_id) }}" class="btn btn-outline btn-sm" style="font-size: 0.7rem; padding: 0.2rem 0.4rem;">Edit</a>
+                <button class="btn btn-ghost btn-sm" style="color: #DC3545; font-size: 0.7rem; padding: 0.2rem 0.4rem;" onclick="deleteEvent({{ ev.event_id }})">Delete</button>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ── RECOMMENDATIONS MODAL ── -->
+<div id="recModal" class="glass-modal" onclick="closeRecModalOutside(event)">
+  <div class="glass-modal-content">
+    <span class="close-glass" onclick="closeRecModal()">&times;</span>
+    <h2 style="margin-top: 0; font-size: 1.2rem; text-align: center; margin-bottom: 1.5rem;">Recommended Events</h2>
+    
+    <div id="recList">
+      {% if recommended %}
+        {% for ev in recommended %}
+        <div class="rec-item">
+          <img src="{{ ev.image_url }}" alt="Event">
+          <div class="rec-info" style="flex: 1;">
+            <h4>{{ ev.title }}</h4>
+            <p>{{ ev.category }} · {{ ev.date.strftime('%b %d') }}</p>
+          </div>
+          <a href="/events/{{ ev.event_id }}" class="btn btn-primary btn-sm" style="border-radius: 20px; font-size: 0.7rem;">Book Now</a>
+        </div>
+        {% endfor %}
+      {% else %}
+        <p style="text-align: center; opacity: 0.7;">No suggestions yet. Explore more events!</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<script>
+function openRecModal() {
+  const modal = document.getElementById('recModal');
+  modal.classList.add('active');
+}
+
+function closeRecModal() {
+  const modal = document.getElementById('recModal');
+  modal.classList.remove('active');
+}
+
+function closeRecModalOutside(e) {
+  if (e.target.id === 'recModal') closeRecModal();
+}
+
+async function cancelBooking(id) {
+    if (!confirm('Cancel this booking?')) return;
+    const res = await fetch(`/api/bookings/cancel/${id}`, { method: 'POST' });
+    const data = await res.json();
+    showToast(data.message || data.error, res.ok ? 'success' : 'error');
+    if (res.ok) setTimeout(() => location.reload(), 1200);
+}
+
+async function deleteEvent(id) {
+    if (!confirm('Permanently delete this event?')) return;
+    const res = await fetch(`/api/events/${id}`, { method: 'DELETE' });
+    const data = await res.json();
+    showToast(data.message || data.error, res.ok ? 'success' : 'error');
+    if (res.ok) setTimeout(() => location.reload(), 1200);
+}
+</script>
+{% endblock %}

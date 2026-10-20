@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+{% block title %}{{ event.title }} — ASSA{% endblock %}
+{% block meta_desc %}{{ (event.description or '')[:160] }}{% endblock %}
+
+{% block content %}
+<div class="container" style="padding-top:1.5rem;">
+
+  <a href="{{ url_for('main.events') }}" class="btn btn-ghost btn-sm" style="margin-bottom:1rem;">← Back to Events</a>
+
+  <div class="event-detail-layout top-section">
+    <!-- TOP LEFT: Banner -->
+    <div class="event-detail__banner-wrapper">
+      {% if event.image_url %}
+        <img src="{{ event.image_url }}" alt="{{ event.title }}" class="event-detail__hero-img">
+      {% else %}
+        <div class="event-detail__hero-placeholder">🎯</div>
+      {% endif %}
+    </div>
+
+    <!-- TOP RIGHT: Booking widget -->
+    <aside class="event-detail__sidebar">
+      <div class="booking-widget">
+        <div class="booking-widget__price">
+          {% if event.price == 0 %}Free{% else %}₹{{ "%.0f"|format(event.price) }}{% endif %}
+          <span class="per-ticket">/ ticket</span>
+        </div>
+
+        {% if event.is_full %}
+          <div class="badge badge--red" style="display:block;text-align:center;padding:.75rem;">Sold Out</div>
+        {% elif already_booked %}
+          <div class="badge badge--green" style="display:block;text-align:center;padding:.75rem;">✅ Already Booked</div>
+          <a href="{{ url_for('main.dashboard') }}" class="btn btn-outline" style="width:100%;margin-top:.75rem;">View My Bookings</a>
+        {% elif current_user.is_authenticated %}
+          <button class="btn btn-primary" style="width:100%;" id="bookNowBtn" data-event-id="{{ event.event_id }}">
+            Book Ticket
+          </button>
+        {% else %}
+          <a href="{{ url_for('main.login_page') }}" class="btn btn-primary" style="width:100%;">Login to Book Ticket</a>
+        {% endif %}
+
+        <div class="booking-widget__info">
+          <p>🔒 Secure booking · Instant confirmation</p>
+          <p>❌ Free cancellation available</p>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <!-- BOTTOM: Structured Event Details -->
+  <div class="event-detail__main-content">
+    <div class="detail-info-card">
+      <h2 class="card-title">Event Details</h2>
+      <div class="detail-grid">
+        <div class="detail-item">
+          <label>Event / Artist</label>
+          <div class="value"><strong>{{ event.artist if event.artist else event.title }}</strong></div>
+        </div>
+        <div class="detail-item">
+          <label>Category</label>
+          <div class="value"><span class="category-tag category-tag--{{ event.category|lower }}">{{ event.category }}</span></div>
+        </div>
+        <div class="detail-item">
+          <label>Date</label>
+          <div class="value">{{ event.date.strftime('%B %d, %Y') if event.date else 'TBD' }}</div>
+        </div>
+        <div class="detail-item">
+          <label>Time</label>
+          <div class="value">{{ event.date.strftime('%I:%M %p') if event.date else 'TBD' }}</div>
+        </div>
+        <div class="detail-item">
+          <label>Location</label>
+          <div class="value">{{ event.location }}</div>
+        </div>
+        {% if not event.is_user_created %}
+        <div class="detail-item">
+          <label>Rating</label>
+          <div class="value card-rating" style="margin-bottom: 0; gap: 1rem;">
+            <span class="stars" style="font-size: 1rem;">⭐ {{ [3.8, 4.2, 4.5, 4.7, 4.8, 4.9]|random }}</span>
+            <a href="javascript:void(0)" class="view-reviews-link" onclick="openReviewModal('{{ event.title }}')">View Reviews</a>
+          </div>
+        </div>
+        {% endif %}
+        <div class="detail-item full-width">
+          <label>About this Event</label>
+          <div class="value short-desc">
+            {{ (event.description or 'No description available.')[:250] }}{% if event.description and event.description|length > 250 %}...{% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const EVENT_ID = {{ event.event_id }};
+
+const bookBtn = document.getElementById('bookNowBtn');
+if (bookBtn) {
+  bookBtn.addEventListener('click', async () => {
+    bookBtn.disabled = true;
+    bookBtn.textContent = 'Booking…';
+    const res = await fetch(`/api/bookings/${EVENT_ID}`, { method: 'POST' });
+    const data = await res.json();
+    if (res.ok) {
+      showToast('Booking successful!', 'success');
+      setTimeout(() => window.location.href = `/dashboard`, 1200);
+    } else {
+      showToast(data.error || 'Booking failed', 'error');
+      bookBtn.disabled = false;
+      bookBtn.textContent = 'Book Ticket';
+    }
+  });
+}
+</script>
+{% endblock %}

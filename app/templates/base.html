@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}ASSA Event Manager{% endblock %}</title>
+  <meta name="description" content="{% block meta_desc %}ASSA — All-in-one event management platform for organizers and attendees.{% endblock %}" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+  {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+  <!-- ── NAVBAR ────────────────────────────────────────────────── -->
+  <nav class="navbar" id="navbar">
+    <div class="nav-container">
+      <a href="{{ url_for('main.home') }}" class="nav-brand">
+        <img src="{{ url_for('static', filename='assa_logo_wide.png') }}?v=2" alt="ASSA Event Management Platform" class="brand-logo-full" />
+      </a>
+
+      <ul class="nav-links center-links" id="navLinks">
+        <li><a href="{{ url_for('main.home') }}" class="nav-link {% if request.endpoint == 'main.home' %}active{% endif %}">Home</a></li>
+        <li><a href="{{ url_for('main.events') }}" class="nav-link {% if request.endpoint == 'main.events' %}active{% endif %}">Events</a></li>
+        <li><a href="{{ url_for('main.recommendations') }}" class="nav-link {% if request.endpoint == 'main.recommendations' %}active{% endif %}">Recommendations</a></li>
+        {% if current_user.is_authenticated %}
+          <li><a href="{{ url_for('main.dashboard') }}" class="nav-link {% if request.endpoint == 'main.dashboard' %}active{% endif %}">Dashboard</a></li>
+        {% endif %}
+      </ul>
+
+      <div class="nav-right">
+        {% if current_user.is_authenticated %}
+          <div class="user-dropdown">
+            <button class="user-dropdown-btn" id="userDropdownBtn">
+              <div class="avatar-circle">{{ current_user.name[0]|upper }}</div>
+            </button>
+            <div class="user-dropdown-content" id="userDropdownContent">
+              <div class="dropdown-header">
+                <strong>{{ current_user.name }}</strong>
+                <span class="badge badge--{{ current_user.role }}">{{ current_user.role|capitalize }}</span>
+              </div>
+              <hr>
+              {% if current_user.role == 'admin' %}
+                <a href="{{ url_for('main.admin_panel') }}">🛡️ Admin Panel</a>
+              {% endif %}
+              <a href="javascript:void(0)" id="logoutBtn">🚪 Logout</a>
+            </div>
+          </div>
+        {% else %}
+          <div class="auth-buttons">
+            <a href="{{ url_for('main.login_page') }}" class="btn btn-ghost btn-sm">Login</a>
+            <a href="{{ url_for('main.register_page') }}" class="btn btn-primary btn-sm">Sign Up</a>
+          </div>
+        {% endif %}
+      </div>
+
+      <button class="hamburger" id="hamburger" aria-label="Toggle menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </nav>
+  <!-- ── END NAVBAR ─────────────────────────────────────────────── -->
+
+  <!-- ── FLASH MESSAGES ──────────────────────────────────────────── -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div class="flash-container">
+        {% for category, message in messages %}
+          <div class="flash flash--{{ category }}">{{ message }}</div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+
+  <!-- ── REVIEW MODAL ───────────────────────────────────────────── -->
+  <div id="reviewModal" class="modal">
+    <div class="modal-content">
+      <span class="close-modal" id="closeReviewModal">&times;</span>
+      <h2 id="modalEventTitle">Event Reviews</h2>
+      <hr>
+      <div id="randomReviewsList"></div>
+    </div>
+  </div>
+
+  <script>
+    function openReviewModal(title) {
+      document.getElementById('modalEventTitle').textContent = `Reviews for ${title}`;
+      const list = document.getElementById('randomReviewsList');
+      const reviews = [
+        "Amazing experience! The vibes were incredible.",
+        "Well organized and strictly followed the schedule.",
+        "Worth every penny. Would love to attend again!",
+        "The venue was a bit crowded, but the performance made up for it.",
+        "Great atmosphere and friendly staff.",
+        "A must-visit for everyone interested in this category!"
+      ];
+      // Pick 3 random
+      const shuffled = reviews.sort(() => 0.5 - Math.random());
+      const selected = shuffled.slice(0, 3);
+      
+      list.innerHTML = selected.map(r => `
+        <div class="review-item">
+          <div class="review-stars">⭐⭐⭐⭐⭐</div>
+          <p>"${r}"</p>
+          <small>— Verified Attendee</small>
+        </div>
+      `).join('');
+      
+      document.getElementById('reviewModal').style.display = 'flex';
+    }
+    
+    document.getElementById('closeReviewModal')?.addEventListener('click', () => {
+      document.getElementById('reviewModal').style.display = 'none';
+    });
+    
+    window.onclick = function(event) {
+      if (event.target == document.getElementById('reviewModal')) {
+        document.getElementById('reviewModal').style.display = 'none';
+      }
+    }
+
+    // Smooth scroll for hero
+    document.addEventListener('click', e => {
+      if (e.target.classList.contains('scroll-link')) {
+        e.preventDefault();
+        const target = document.querySelector(e.target.getAttribute('href'));
+        target?.scrollIntoView({ behavior: 'smooth' });
+      }
+    });
+  </script>
+
+  <!-- ── TOAST NOTIFICATION (JS-driven) ─────────────────────────── -->
+  <div id="toast" class="toast" aria-live="polite"></div>
+
+  <!-- ── MAIN CONTENT ────────────────────────────────────────────── -->
+  <main id="main-content">
+    {% block content %}{% endblock %}
+  </main>
+
+  <!-- ── FOOTER ──────────────────────────────────────────────────── -->
+  <footer class="footer">
+    <div class="footer-container">
+      <div class="footer-brand">
+        <img src="{{ url_for('static', filename='assa_logo_footer.png') }}" alt="ASSA Event Management Platform" class="brand-logo-full brand-logo-full--footer" />
+        <p>All-in-one event management platform for everyone.</p>
+      </div>
+      <div class="footer-links">
+        <h4>Platform</h4>
+        <a href="{{ url_for('main.events') }}">Browse Events</a>
+        <a href="{{ url_for('main.register_page') }}">Get Started</a>
+      </div>
+      <div class="footer-links">
+        <h4>Account</h4>
+        {% if current_user.is_authenticated %}
+          <a href="{{ url_for('main.dashboard') }}">Dashboard</a>
+        {% else %}
+          <a href="{{ url_for('main.login_page') }}">Login</a>
+          <a href="{{ url_for('main.register_page') }}">Register</a>
+        {% endif %}
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>© 2026 ASSA Event Manager · Built with ❤️ for event lovers</p>
+    </div>
+  </footer>
+
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+  {% block extra_js %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% block title %}Book Ticket — {{ event.title }} · ASSA{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width:600px;padding-top:3rem;">
+  <a href="/events/{{ event.event_id }}" class="btn btn-ghost btn-sm" style="margin-bottom:1.5rem;">← Back to Event</a>
+
+  <div class="card">
+    <div class="card__header">
+      <h1 style="font-size:1.5rem;">Complete Your Booking</h1>
+      <p>{{ event.title }}</p>
+    </div>
+
+    <div class="card__body">
+      <div class="booking-summary">
+        <div class="summary-row"><span>Event</span><strong>{{ event.title }}</strong></div>
+        <div class="summary-row"><span>Date</span><strong>{{ event.date.strftime('%b %d, %Y') if event.date else 'TBD' }}</strong></div>
+        <div class="summary-row"><span>Location</span><strong>{{ event.location }}</strong></div>
+        <div class="summary-row summary-total">
+          <span>Total</span>
+          <strong>{% if event.price == 0 %}Free{% else %}₹{{ "%.2f"|format(event.price) }}{% endif %}</strong>
+        </div>
+      </div>
+
+      {% if event.price > 0 %}
+        <div class="payment-form" id="paymentForm">
+          <h3 style="margin-bottom:1rem;">Payment Details <span class="badge badge--green">Mock</span></h3>
+          <div class="form-group">
+            <label class="form-label">Card Number</label>
+            <input type="text" id="cardNumber" class="input" placeholder="4242 4242 4242 4242" maxlength="19" />
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Expiry</label>
+              <input type="text" id="cardExpiry" class="input" placeholder="MM/YY" maxlength="5" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">CVV</label>
+              <input type="text" id="cardCvv" class="input" placeholder="123" maxlength="3" />
+            </div>
+          </div>
+          <p class="help-text">🔒 This is a mock payment. No real transaction occurs.</p>
+        </div>
+      {% endif %}
+
+      <button class="btn btn-primary" style="width:100%;margin-top:1.5rem;" id="confirmBookingBtn"
+              data-event-id="{{ event.event_id }}"
+              data-price="{{ event.price }}">
+        {% if event.price == 0 %}Confirm Free Booking{% else %}Pay & Confirm{% endif %}
+      </button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const EVENT_ID = {{ event.event_id }};
+const PRICE    = {{ event.price }};
+
+document.getElementById('confirmBookingBtn').addEventListener('click', async function () {
+  this.disabled = true;
+  this.textContent = 'Processing…';
+
+  // Step 1: Create booking
+  const bookRes  = await fetch(`/api/bookings/${EVENT_ID}`, { method: 'POST', headers: { 'Content-Type': 'application/json' } });
+  const bookData = await bookRes.json();
+
+  if (!bookRes.ok) {
+    showToast(bookData.error || 'Booking failed', 'error');
+    this.disabled = false;
+    this.textContent = PRICE > 0 ? 'Pay & Confirm' : 'Confirm Free Booking';
+    return;
+  }
+
+  const bookingId = bookData.booking.booking_id;
+
+  // Step 2: Process payment (only if price > 0)
+  if (PRICE > 0) {
+    const cardNum = document.getElementById('cardNumber')?.value.replace(/\s/g, '') || '4242424242424242';
+    const payRes   = await fetch(`/api/payments/${bookingId}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ card_number: cardNum })
+    });
+    const payData = await payRes.json();
+    if (!payRes.ok) {
+      showToast(payData.message || 'Payment failed', 'error');
+      this.disabled = false;
+      this.textContent = 'Pay & Confirm';
+      return;
+    }
+  }
+
+  showToast('🎉 Booking confirmed!', 'success');
+  setTimeout(() => window.location.href = `/ticket/${bookingId}`, 1500);
+});
+</script>
+{% endblock %}
