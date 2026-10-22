@@ -1,6 +1,6 @@
 # ASSA Event Management Platform
 
-**Full-stack Python/Flask portfolio application · Internship project**  
+**Python/Flask web application · Internship project**  
 **Stack:** Python · Flask · SQLAlchemy · SQLite (default) · HTML/CSS · JavaScript
 
 A web application designed to simplify event discovery, attendee registration, bookings and organizer administration. Shravya describes working on event-management functionality during her **Python & AI internship at Contriver (February–May 2026)**.
