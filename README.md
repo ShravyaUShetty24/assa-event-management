@@ -71,5 +71,3 @@ This repository is **for code review and portfolio purposes**. Do not deploy it 
 ## Learn more
 
 See **[Project walkthrough and internship contributions](docs/PROJECT_WALKTHROUGH.md)** for a recruiter-friendly summary, the reported implementation challenges, and an explicit distinction between documentation and available code.
-
-**Portfolio profile:** **Shravya U Shetty** — Python & AI Intern at Contriver. This page highlights Shravya's documented project contributions.
