@@ -45,4 +45,4 @@ These are self-described responsibilities, not an independently verified commit-
 Repository files let reviewers inspect the project, but they are **not** a guarantee of a deployed service, payment processing, independently audited security or benchmarked recommendation accuracy.
 
 ## Source material
-Summarized from the team's **event.pdf** interview-preparation document supplied for the portfolio. The private interview Q&A file has **not** been republished verbatim.
+Summarized from the **event.pdf** interview-preparation document supplied for Shravya's portfolio. The private interview Q&A file has **not** been republished verbatim.
